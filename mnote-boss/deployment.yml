@@ -1,0 +1,64 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: pay-boss-test
+spec:
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: pay-boss-test
+        env: test
+    spec:
+      containers:
+        - name: pay-boss-test
+          image: 172.16.0.236:5000/pay-boss-test:v404
+          volumeMounts:
+            - name: logs
+              mountPath: /usr/app/logs
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 28082
+
+          readinessProbe:
+            httpGet:
+              path: /readyStatus
+              port: 28082
+              httpHeaders:
+                - name: X-Custom-Header
+                  value: pod
+            initialDelaySeconds: 5
+            periodSeconds: 5
+
+          livenessProbe:
+            httpGet:
+              path: /liveStatus
+              port: 28082
+              httpHeaders:
+                - name: X-Custom-Header
+                  value: pod
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - hostPath:
+            path: /www/pay-boss/logs
+          name: logs
+      imagePullSecrets:
+        - name: myregistrykey
+
+
+---
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: pay-boss-test-service
+spec:
+  selector:
+    app: pay-boss-test
+  ports:
+    - protocol: TCP
+      port: 28082
+      targetPort: 28082
+      nodePort: 30002
+  type: NodePort

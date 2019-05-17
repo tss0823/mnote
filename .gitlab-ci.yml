@@ -1,0 +1,83 @@
+# This file is a template, and might need editing before it works on your project.
+# Official docker image.
+#image: docker:stable-dind
+
+#services:
+#  - docker:dind
+
+  #before_script:
+  #- docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  #- docker login -u loongPay -p lp123456@ 127.0.0.1:5000
+
+
+stages:
+  - build
+  - package
+  - deploy
+
+cache:
+  paths:
+    - /cache/.m2/repository
+  key: "$CI_COMMIT_REF_SLUG"
+
+variables:
+  MAVEN_OPTS: "-Dmaven.repo.local=/cache/.m2/repository"
+  CI_REGISTRY: "172.16.0.236:5000"
+  PAYMENT_NAME: "pay-$APP_NAME-$APP_ENV"
+  CI_REGISTRY_IMAGE: "$CI_REGISTRY/pay-$APP_NAME-$APP_ENV:v$CI_PIPELINE_ID"
+  #KUBE_URL: "https://172.16.0.236:6443"
+
+
+maven-build:
+  variables:
+    CI_DEBUG_TRACE: "true"
+  image: maven:3.6-jdk-8
+  stage: build
+  only:
+    - test
+  script:
+    - cat /etc/hosts
+    - cat /etc/resolv.conf
+    #- ping 127.0.0.1
+    - echo 151.101.52.215 repo.maven.apache.org >> /etc/hosts
+    - cat /etc/hosts
+    - echo -e "nameserver 10.96.0.10\nsearch default.svc.cluster.local svc.cluster.local cluster.local\noptions ndots:5" > /etc/resolv.conf
+    - cat /etc/resolv.conf
+#    - ping repo.maven.apache.org -c 5
+    - echo "repo.maven.apache.org"
+    - "mvn clean package -Dprofiles.active=$APP_ENV -Dmaven.test.skip=true"
+  artifacts:
+    paths:
+      - mnote-$APP_NAME/target/*.jar
+
+docker-build:
+  stage: package
+  image: docker:stable-dind
+  only:
+    - test
+  script:
+    - export DOCKER_HOST="tcp://172.16.0.236:2375"
+    #- export DOCKER_OPTS="--insecure-registry 172.16.0.236:5000"
+    #- export DOCKER_OPTS="--tlsverify  --tlscacert=/etc/kubernetes/key/ca.pem --tlscert=/etc/kubernetes/key/client.pem --tlskey=/etc/kubernetes/key/client-key.pem"
+    #- unset DOCKER_HOST
+    #- unset DOCKER_TLS_PATH
+    - export DOCKER_TLS_VERIFY=1
+    - export DOCKER_TLS_PATH=/etc/kubernetes/key/
+    - export DOCKER_CERT_PATH=/etc/kubernetes/key/
+    - docker info
+    - cat /etc/docker/daemon.json
+    #- cat /etc/kubernetes/admin.conf
+    - echo "CI_REGISTRY_IMAGE=$CI_REGISTRY_IMAGE"
+    - docker login -u loongPay -p lp123456@ $CI_REGISTRY
+    - docker build --pull -t "$CI_REGISTRY_IMAGE" --build-arg APP_NAME=$APP_NAME .
+    - docker push "$CI_REGISTRY_IMAGE"
+
+k8s-deploy:
+  image: $CI_REGISTRY/alpine:3.8-1
+  stage: deploy
+  only:
+    - test
+  script:
+    #- kubectl --kubeconfig /etc/kubernetes/admin.conf apply -f deployment.yml
+    - echo "kubectl --kubeconfig /etc/kubernetes/admin.conf  set image deployments/$PAYMENT_NAME $PAYMENT_NAME=$CI_REGISTRY_IMAGE"
+    - kubectl --kubeconfig /etc/kubernetes/admin.conf  set image deployments/$PAYMENT_NAME $PAYMENT_NAME="$CI_REGISTRY_IMAGE"

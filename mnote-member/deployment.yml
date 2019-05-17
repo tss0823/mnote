@@ -1,0 +1,66 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: pay-member-test
+spec:
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: pay-member-test
+        env: test
+    spec:
+      containers:
+        - name: pay-member-test
+          image: 172.16.0.236:5000/pay-member-test:v406
+          volumeMounts:
+            - name: logs
+              mountPath: /usr/app/logs
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 28081
+
+
+          readinessProbe:
+            httpGet:
+              path: /readyStatus
+              port: 28081
+              httpHeaders:
+                - name: X-Custom-Header
+                  value: pod
+            initialDelaySeconds: 5
+            periodSeconds: 5
+
+          livenessProbe:
+            httpGet:
+              path: /liveStatus
+              port: 28081
+              httpHeaders:
+                - name: X-Custom-Header
+                  value: pod
+            initialDelaySeconds: 5
+            periodSeconds: 5
+
+      volumes:
+        - hostPath:
+            path: /www/pay-member/logs
+          name: logs
+      imagePullSecrets:
+        - name: myregistrykey
+
+
+---
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: pay-member-test-service
+spec:
+  selector:
+    app: pay-member-test
+  ports:
+    - protocol: TCP
+      port: 28081
+      targetPort: 28081
+      nodePort: 30001
+  type: NodePort

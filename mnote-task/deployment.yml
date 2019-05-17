@@ -1,0 +1,64 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: pay-task-test
+spec:
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: pay-task-test
+        env: test
+    spec:
+      containers:
+        - name: pay-task-test
+          image: 172.16.0.236:5000/pay-task-test:v357
+          volumeMounts:
+            - name: logs
+              mountPath: /usr/app/logs
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 28083
+
+          readinessProbe:
+            httpGet:
+              path: /readyStatus
+              port: 28083
+              httpHeaders:
+                - name: X-Custom-Header
+                  value: pod
+            initialDelaySeconds: 5
+            periodSeconds: 5
+
+          livenessProbe:
+            httpGet:
+              path: /liveStatus
+              port: 28083
+              httpHeaders:
+                - name: X-Custom-Header
+                  value: pod
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - hostPath:
+            path: /www/pay-task/logs
+          name: logs
+      imagePullSecrets:
+        - name: myregistrykey
+
+
+---
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: pay-task-test-service
+spec:
+  selector:
+    app: pay-task-test
+  ports:
+    - protocol: TCP
+      port: 28083
+      targetPort: 28083
+      nodePort: 30003
+  type: NodePort

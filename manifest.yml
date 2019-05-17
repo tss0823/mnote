@@ -1,0 +1,8 @@
+---
+applications:
+  - name: mnote
+    memory: 256M
+    instances: 1
+    host: mnote
+    domain: guides.spring.io
+    path: build/libs/mnote-0.1.0.jar
