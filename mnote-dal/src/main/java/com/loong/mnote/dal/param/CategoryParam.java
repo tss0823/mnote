@@ -22,7 +22,7 @@ public class CategoryParam extends BaseDomain {
     @ApiModelProperty(notes = "类目名称",example = "国际")
     private String name;
 
-    @ApiModelProperty(notes = "类目描述",example = "国际新闻")
+    @ApiModelProperty(notes = "类目描述",example = "描述")
     private String desc;
 
     @ApiModelProperty(notes = "上一级类目ID")

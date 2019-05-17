@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.annotations.ApiModel;
 
 /**
- * 新闻语言枚举
+ * 语言枚举
  */
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
 @ApiModel("本地化枚举")
