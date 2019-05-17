@@ -5,6 +5,8 @@ import com.loong.mnote.service.component.SystemConfigComponent;
 import com.loong.mnote.service.component.redis.MessagePublisher;
 import com.loong.mnote.service.component.redis.SubPubMessage;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 /**
@@ -18,6 +20,8 @@ public class InitDataService extends AbstractService {
     @Autowired
     private SystemConfigComponent systemConfigComponent;
 
+
+    @Lazy
     @Autowired
     private MessagePublisher messagePublisher;
 

@@ -28,7 +28,7 @@ import java.util.concurrent.Executors;
  * @Author: zheng.yuan
  * @Date: 2019-01-10
  **/
-@Configuration
+//@Configuration
 public class RedisConfig {
 
     @Autowired
@@ -38,6 +38,7 @@ public class RedisConfig {
     @Lazy
     private List<SubPubMessageConsume> subPubMessageConsumeList;
 
+    @Lazy
     @Bean
     public Jackson2JsonRedisSerializer<Object> jackson2JsonRedisSerializer(){
         Jackson2JsonRedisSerializer<Object> jackson2JsonRedisSerializer = new Jackson2JsonRedisSerializer<>(Object.class);
